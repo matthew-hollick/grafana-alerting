@@ -8,6 +8,7 @@ services:
       - "3000:3000"
       - "9090:9090"
       - "9093:9093"
+      - "8080:8080"
     volumes:
       - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
     depends_on:
@@ -20,9 +21,37 @@ services:
       - alertmanager1
       - alertmanager2
       - alertmanager3
+      - cadvisor1
     networks:
       - monitoring_network
-
+  cadvisor1:
+    image: gcr.io/cadvisor/cadvisor:v0.45.0
+    privileged: true
+    container_name: cadvisor1
+    hostname: cadvisor1
+    volumes:
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/machine-id:/etc/machine-id:ro
+      - /var/lib/dbus/machine-id:/var/lib/dbus/machine-id:ro
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    depends_on:
+      - redis
+    ports:
+      - "8080"
+    networks:
+      - monitoring_network
+  redis:
+    image: redis:latest
+    container_name: redis
+    hostname: redis
+    ports:
+      - "6379"
+    networks:
+      - monitoring_network
   # Grafana services
   grafana1:
     image: grafana/grafana:latest
